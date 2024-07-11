@@ -124,10 +124,11 @@ class LaurentPolynomial():
         Check if the Laurent polynomial is almost zero within a given tolerance.
 
         Args:
-            tol (float, optional): Tolerance value for determining 'almost zero'. Defaults to 1e-8.
+            tol (float, optional): Tolerance value for determining 'almost zero'. Default is 1e-8.
 
         Returns:
-            bool: True if the polynomial is almost zero (within the specified tolerance), False otherwise.
+            bool: True if the polynomial is almost zero (within the specified tolerance),
+                  False otherwise.
         """
         return self.is_zero or self.trim(tol=tol).is_zero
 
@@ -152,9 +153,9 @@ class LaurentPolynomial():
             LaurentPolynomial: Resized polynomial within the specified degree range.
 
         Raises:
-            ValueError:
-                If d_min is greater than d_max.
-                Ensure that 'd_min' is less than or equal to 'd_max' when resizing the polynomial.
+            ValueError: If d_min is greater than d_max.
+                        Ensure that 'd_min' is less than or equal to 'd_max'
+                        when resizing the polynomial.
 
         """
         if d_min > d_max:
@@ -185,8 +186,6 @@ class LaurentPolynomial():
         Returns:
             complex: The coefficient of the term with degree idx.
         """
-        if idx >= 100:
-            raise IndexError
         pos = idx - self.__d_min
         if pos >= 0 and pos < len(self):
             return self.__coef[pos]
@@ -313,12 +312,7 @@ class LaurentPolynomial():
         Returns:
             LaurentPolynomial: The resulting polynomial after multiplication.
         """
-        if isinstance(other, numbers.Number):
-            return self.__class__(other * self.__coef, self.__d_min, self.__d_max)
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
-            return self * other
+        return self * other
 
     def __sub__(self, other):
         """
@@ -431,7 +425,7 @@ class LaurentPolynomial():
 
         Returns:
             LaurentPolynomial: The conjugate reciprocal polynomial, obtained by reversing
-            the coefficients and taking the complex conjugate.
+                               the coefficients and taking the complex conjugate.
 
         Notes:
             The conjugate reciprocal of a Laurent polynomial f(w) is obtained by reversing its
@@ -445,10 +439,10 @@ class LaurentPolynomial():
         Evaluate the polynomial at given angles.
 
         Args:
-            angles (array): Angles at which to evaluate the polynomial.
+            angles (float or numpy.ndarray): Angle(s) at which to evaluate the polynomial.
 
         Returns:
-            array: Evaluated values of the polynomial.
+            numpy.ndarray: Evaluated values of the polynomial.
         """
         if self.__is_zero:
             return np.zeros_like(angles, dtype=complex)
@@ -461,8 +455,8 @@ class LaurentPolynomial():
         Trim the Laurent polynomial by removing zero coefficients at the higher degrees.
 
         Args:
-            tol (float, optional):
-                Tolerance for considering a coefficient as zero. Default is 1e-8.
+            tol (float, optional): Tolerance for considering a coefficient as zero.
+                                   Default is 1e-8.
 
         Returns:
             LaurentPolynomial: Trimmed polynomial where coefficients at higher degrees are zero.

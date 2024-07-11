@@ -4,13 +4,11 @@ import numpy as np
 from scipy.special import jv
 
 from laurent_polynomial import LaurentPolynomial
-from gqsp_phase_angle_finder import GQSPPhaseAngleFinderViaRootFindingAndCarving
-from gqsp_phase_angle_finder import GQSPPhaseAngleFinderViaPronyAndCarving
 
 
 def truncate_exp(d, tau):
     """
-    Truncate an exponential function of the form scale * exp(-1.j * tau * cos(theta))
+    Truncate an exponential function of the form exp(-1.j * tau * cos(theta))
     using Chebyshev approximation.
 
     Args:
@@ -31,37 +29,36 @@ def truncate_exp(d, tau):
     return f_w, lambda theta: np.exp(-1.j * tau * np.cos(theta))
 
 
-def truncate_cos(d, scale, eps):
+def truncate_cos(d, cos_scale, noise_scale):
     """
-    Truncate a cosine function of the form scale * cos(d * theta) + noise.
+    Truncate a cosine function of the form cos_scale * cos(d * theta) + noise.
 
     Args:
         d (int): Degree of the Laurent polynomial.
-        scale (float): Scaling factor for the coefficients.
-        eps (float): Amplitude of random noise.
+        cos_scale (float): Scaling factor for the coefficients.
+        noise_scale (float): Amplitude of random noise.
 
     Returns:
         tuple: A tuple containing the truncated Laurent polynomial and the cosine function.
             - LaurentPolynomial: Truncated Laurent polynomial.
             - function: Cosine function evaluable at given angles.
     """
-    f_w_coef = np.random.rand(d * 2 + 1) * eps
-    f_w_coef[0] += 1 / 2
-    f_w_coef[-1] += 1 / 2
-    f_w_coef *= scale
+    f_w_coef = np.random.rand(d * 2 + 1) * noise_scale
+    f_w_coef[0] += cos_scale
+    f_w_coef[-1] += cos_scale
     f_w = LaurentPolynomial(f_w_coef, -d, d)
     return f_w, lambda theta: f_w.eval(theta)
 
 
-def truncate_exp_plus_cos(d, tau, scale, eps):
+def truncate_exp_plus_cos(d, tau, cos_scale, noise_scale):
     """
     Truncate a combination of exponential and cosine functions.
 
     Args:
         d (int): Degree of the Laurent polynomials.
         tau (float): Parameter for the exponential function.
-        scale (float): Scaling factor for the cosine function coefficients.
-        eps (float): Amplitude of random noise for the cosine function.
+        cos_scale (float): Scaling factor for the cosine function coefficients.
+        noise_scale (float): Amplitude of random noise for the cosine function.
 
     Returns:
         tuple:
@@ -70,32 +67,5 @@ def truncate_exp_plus_cos(d, tau, scale, eps):
             - function: Combined function evaluable at given angles.
     """
     p_exp, exp = truncate_exp(d, tau)
-    p_cos, cos = truncate_cos(d, scale, eps)
+    p_cos, cos = truncate_cos(d, cos_scale, noise_scale)
     return p_exp + p_cos, lambda theta: exp(theta) + cos(theta)
-
-
-if __name__ == '__main__':
-    tau = 10.0
-    d = 40
-    scale = 1 / 2
-    eps = 1e-3
-
-    def truncate_func1(d):
-        return truncate_exp_plus_cos(d[1], tau=tau, scale=scale, eps=eps)
-
-    def truncate_func2(d):
-        return truncate_cos(d[1], scale=scale, eps=eps)
-
-    solver = GQSPPhaseAngleFinderViaRootFindingAndCarving(truncate_func=truncate_func1)
-    solver.angle_finding(d=(-d, d), scale=0.5, measure_error=True)
-    print(solver.info)
-    solver = GQSPPhaseAngleFinderViaRootFindingAndCarving(truncate_func=truncate_func2)
-    solver.angle_finding(d=(-d, d), scale=0.5, measure_error=True)
-    print(solver.info)
-
-    solver = GQSPPhaseAngleFinderViaPronyAndCarving(truncate_func=truncate_func1)
-    solver.angle_finding(d=(-d, d), scale=0.5, measure_error=True)
-    print(solver.info)
-    solver = GQSPPhaseAngleFinderViaPronyAndCarving(truncate_func=truncate_func2)
-    solver.angle_finding(d=(-d, d), scale=0.5, measure_error=True)
-    print(solver.info)

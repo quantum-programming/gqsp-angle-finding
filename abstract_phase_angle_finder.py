@@ -12,13 +12,18 @@ class AbstractPhaseAngleFinder(ABC):
     Abstract base class for phase angle finding algorithms.
 
     Attributes:
+        truncate_func (callable): Function to truncate the target function.
         info (defaultdict): Default dictionary for storing algorithm information.
     """
 
-    def __init__(self):
+    def __init__(self, truncate_func):
         """
         Initializes the AbstractPhaseAngleFinder instance with a defaultdict for info.
+
+        Args:
+            truncate_func (callable): Function to truncate the target function.
         """
+        self.truncate_func = truncate_func
         self.info = defaultdict(lambda: np.nan)
 
     @abstractmethod
@@ -27,8 +32,8 @@ class AbstractPhaseAngleFinder(ABC):
         Abstract method to calculate the depth or degree range.
 
         Args:
-            d (Tuple[int, int] or int):
-                Tuple containing minimum and maximum degrees or maximum degree as an integer.
+            d (Tuple[int, int] or int): Tuple containing minimum and maximum degrees
+                                        or maximum degree as an integer.
 
         Returns:
             int: Depth or degree range.
@@ -38,13 +43,14 @@ class AbstractPhaseAngleFinder(ABC):
     @abstractmethod
     def measure(self, phase_angles):
         """
-        Abstract method to measure the unitary matrix computed from phase angles.
+        Abstract method to measure the unitary matrix (QSP operation sequence) computed
+        from phase angles.
 
         Args:
-            phase_angles (tuple or np.ndarray): phase angles required for computation.
+            phase_angles (dict): phase angles required for computation.
 
         Returns:
-            np.ndarray: Mesurement.
+            np.ndarray: Matrix elements corresponding to F(w).
         """
         pass
 
@@ -53,11 +59,11 @@ class AbstractPhaseAngleFinder(ABC):
         Truncate a target function using a specified degree.
 
         Args:
-            d (Tuple[int, int] or int):
-                Tuple containing minimum and maximum degrees or maximum degree as an integer.
+            d (Tuple[int, int] or int): Tuple containing minimum and maximum degrees
+                                        or maximum degree as an integer.
 
         Returns:
-            callable: Truncated function.
+            Tuple[Polynomial, function]: Tuple containing truncated function and target function.
         """
         return self.truncate_func(d)
 
@@ -66,11 +72,14 @@ class AbstractPhaseAngleFinder(ABC):
         Calculates the truncation error between truncated and target functions.
 
         Args:
-            trun_f: Truncated function.
-            target_f: Target function.
+            trun_f (Polynomial): Truncated function.
+            target_f (function): Target function.
 
         Returns:
             float: Truncation error.
+
+        Notes:
+            Truncation error is defined as ||trun_f(w) - target_f(w)||_inf.
         """
         trun_f_w = trun_f.eval(ANGLE_SAMPLES)
         target_f_w = target_f(ANGLE_SAMPLES)
@@ -82,11 +91,10 @@ class AbstractPhaseAngleFinder(ABC):
         Abstract method to compute the completion part.
 
         Args:
-            F (LaurentPolynomial): Input Laurent polynomial.
+            F (Polynomial): Input polynomial.
 
         Returns:
-            LaurentPolynomial or None:
-                The resulting Laurent polynomial or None if completion fails.
+            Polynomial or None: The resulting polynomial or None if completion fails.
         """
         pass
 
@@ -95,11 +103,14 @@ class AbstractPhaseAngleFinder(ABC):
         Calculates the completion error between F, G, and the identity operator.
 
         Args:
-            F (LaurentPolynomial): First input Laurent polynomial.
-            G (LaurentPolynomial): Second input Laurent polynomial.
+            F (Polynomial): First input polynomial.
+            G (Polynomial): Second input polynomial.
 
         Returns:
             float: Completion error.
+
+        Notes:
+            Completion error is defined as ||1 - F(w)F^*(w^-1) - G(w)G^*(w^-1)||_inf.
         """
         res_w = (1 - F * ~F - G * ~G).eval(ANGLE_SAMPLES)
         return abs_max(res_w)
@@ -110,14 +121,13 @@ class AbstractPhaseAngleFinder(ABC):
         Abstract method to compute the decomposition part.
 
         Args:
-            F (LaurentPolynomial): First input Laurent polynomial.
-            G (LaurentPolynomial): Second input Laurent polynomial.
-            d (Tuple[int, int] or int):
-                Tuple containing minimum and maximum degrees or maximum degree as an integer.
-
+            F (Polynomial): First input polynomial.
+            G (Polynomial): Second input polynomial.
+            d (Tuple[int, int] or int): Tuple containing minimum and maximum degrees
+                                        or maximum degree as an integer.
 
         Returns:
-            tuple or np.ndarray or None: Phase angles or None if decomposition fails.
+            dict or None: Dictionary containing phase angles or None if decomposition fails.
         """
         pass
 
@@ -126,13 +136,14 @@ class AbstractPhaseAngleFinder(ABC):
         Main method to find phase angles based on truncation, completion, and decomposition.
 
         Args:
-            d (Tuple[int, int] or int):
-                Tuple containing minimum and maximum degrees or maximum degree as an integer.
+            d (Tuple[int, int] or int): Tuple containing minimum and maximum degrees
+                                        or maximum degree as an integer.
             scale (float): Scaling factor.
             measure_error (bool, optional): Flag to measure errors. Default is False.
 
         Returns:
-            tuple or np.ndarray or None: Phase angles or None if completion or decomposition fails.
+            dict or None: Dictionary containing phase angles or None if completion
+                          or decomposition fails.
         """
         self.info = defaultdict(lambda: np.nan)
         if measure_error:
@@ -177,29 +188,35 @@ class AbstractPhaseAngleFinder(ABC):
         Calculates the angle finding error based on truncated function and phase angles.
 
         Args:
-            trun_f: Truncated function.
-            phase_angles: Tuple containing phase angles required for computation.
+            trun_f (Polynomial): Truncated function.
+            phase_angles (dict): phase angles required for computation.
             scale (float): Scaling factor.
 
         Returns:
             float: Angle finding error.
+
+        Notes:
+            Angle finding error is defined as ||(1/scale)*f_qsp(w) - trun_f(w)||_inf.
         """
         trun_f_w = trun_f.eval(ANGLE_SAMPLES)
-        U_phi_w = self.measure(phase_angles)
-        return abs_max(1 / scale * U_phi_w - trun_f_w)
+        U_qsp_w = self.measure(phase_angles)
+        return abs_max(1 / scale * U_qsp_w - trun_f_w)
 
     def total_error(self, target_f, phase_angles, scale):
         """
         Calculates the total error based on target function and phase angles.
 
         Args:
-            target_f: Target function.
-            phase_angles: Tuple containing phase angles required for computation.
+            target_f (function): Target function.
+            phase_angles (dict): phase angles required for computation.
             scale (float): Scaling factor.
 
         Returns:
             float: Total error.
+
+        Notes:
+            Total error is defined as ||(1/scale)*f_qsp(w) - target_f(w)||_inf.
         """
         target_f_w = target_f(ANGLE_SAMPLES)
-        U_phi_w = self.measure(phase_angles)
-        return abs_max(1 / scale * U_phi_w - target_f_w)
+        U_qsp_w = self.measure(phase_angles)
+        return abs_max(1 / scale * U_qsp_w - target_f_w)

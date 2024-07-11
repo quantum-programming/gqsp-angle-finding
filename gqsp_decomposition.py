@@ -16,8 +16,8 @@ def _gqsp_reduce_laurent_polynomials(F, G, theta, phi, tol=1e-8):
         tol (float, optional): Tolerance for numerical stability. Default is 1e-8.
 
     Returns:
-        Tuple[LaurentPolynomial, LaurentPolynomial]:
-            Reduced Laurent polynomials F_tilde and G_tilde.
+        Tuple[LaurentPolynomial, LaurentPolynomial]: Reduced Laurent polynomials F_tilde
+                                                     and G_tilde.
     """
     exp = np.exp(-1.j * phi)
     cos = np.cos(theta)
@@ -43,12 +43,11 @@ def gqsp_decompose_via_carving(F, G, d_min, d_max, tol=1e-8):
         tol (float, optional): Tolerance for numerical stability. Default is 1e-8.
 
     Returns:
-        Tuple[int, np.ndarray, np.ndarray, float]:
-            Decomposition parameters (d_min, theta_list, phi_list, lambda_).
-            - d_min (int): Minimum degree.
-            - theta_list (np.ndarray): List of theta angles.
-            - phi_list (np.ndarray): List of phi angles.
-            - lambda_ (float): Lambda angle.
+        dict: The phase angles dictionary containing:
+            - 'd_min' (int): Minimum degree.
+            - 'theta' (np.ndarray): List of theta angles.
+            - 'phi' (np.ndarray): List of phi angles.
+            - 'lambda' (float): Lambda angle.
     """
     theta_list = np.zeros(d_max - d_min + 1, dtype=float)
     phi_list = np.zeros(d_max - d_min + 1, dtype=float)
@@ -95,4 +94,9 @@ def gqsp_decompose_via_carving(F, G, d_min, d_max, tol=1e-8):
         phi_list[0] = 0
         phi_list[1:i] = np.pi
 
-    return d_min, theta_list, phi_list, lambda_
+    phase_angles = dict()
+    phase_angles['d_min'] = d_min
+    phase_angles['theta'] = theta_list
+    phase_angles['phi'] = phi_list
+    phase_angles['lambda'] = lambda_
+    return phase_angles

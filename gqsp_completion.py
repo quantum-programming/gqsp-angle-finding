@@ -74,7 +74,7 @@ def gqsp_completion_via_prony(F):
     c = completion_poly_inv_fft[: G_degree + 2]
     r = completion_poly_inv_fft[G_degree + 1 : G_degree + len(F) + 1]
     M = hankel(c, r)
-    u, s, vh = svd(M)
+    _, _, vh = svd(M)
 
     G_coef = np.conj(vh[-1])
     G = LaurentPolynomial(G_coef, F.d_min, F.d_max)

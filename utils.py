@@ -2,9 +2,8 @@
 
 import numpy as np
 
+# Define constants for evaluation
 ANGLE_SAMPLES = np.linspace(- np.pi, np.pi, 1000)
-X_FOR_EVAL = np.cos(ANGLE_SAMPLES)
-W_FOR_EVAL = np.exp(1.j * ANGLE_SAMPLES)
 
 
 def is_zero(x, tol=1e-8):
